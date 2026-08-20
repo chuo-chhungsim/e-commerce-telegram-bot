@@ -63,6 +63,8 @@ and put that URL in `VITE_API_URL`.
 ## 3. Deploy to Vercel (front end + bot in one project)
 
 One Vercel project hosts everything: the static site, the Mini App, and the bot.
+This project is deployed at <https://e-commerce-telegram-bot.vercel.app>, with the
+webhook at `/api/telegram` and the order endpoint at `/api/order`.
 
 ```
 dist/               the website and the Mini App (same build)
@@ -82,7 +84,7 @@ root, set **Root Directory** to the folder holding `package.json`. Framework pre
 | Name | Value |
 | --- | --- |
 | `BOT_TOKEN` | the token from @BotFather — server-side only, never `VITE_*` |
-| `WEBAPP_URL` | `https://<your-project>.vercel.app` |
+| `WEBAPP_URL` | `https://<your-project>.vercel.app` — optional, Vercel's own production URL is used when unset |
 | `WEBHOOK_SECRET` | any random string; Telegram echoes it back on every call |
 | `SHOP_NAME` | optional, defaults to `Forever` |
 

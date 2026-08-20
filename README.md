@@ -1,5 +1,7 @@
 # Forever — Fashion e-commerce Telegram Mini App
 
+**Live:** <https://e-commerce-telegram-bot.vercel.app> · **Bot:** [@zentinelfovever_bot](https://t.me/zentinelfovever_bot)
+
 A fashion storefront built with React + Vite + Tailwind. The same build runs as a normal
 website **and** as a Telegram Mini App: inside Telegram it adds the real account, the
 native back button, haptics, a CloudStorage-backed cart, and a bot that confirms orders
