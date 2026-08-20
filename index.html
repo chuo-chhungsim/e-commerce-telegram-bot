@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#ffffff" />
+    <title>Forever — Telegram Mini App</title>
+
+    <!--
+      The Telegram Mini App SDK. It MUST be loaded from telegram.org (not bundled
+      from npm) so that Telegram can inject the WebApp bridge into the page.
+      When the page is opened outside Telegram, window.Telegram.WebApp still
+      exists but reports no user - src/telegram/tg.js handles that fallback.
+    -->
+    <script src="https://telegram.org/js/telegram-web-app.js?57"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
