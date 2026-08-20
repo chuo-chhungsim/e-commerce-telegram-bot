@@ -7,9 +7,9 @@ export const escapeHtml = (value) =>
   String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const PAYMENT_LABELS = {
+  khqr: 'KHQR (demo)',
+  aba: 'ABA Pay (demo)',
   cod: 'Cash on Delivery',
-  stripe: 'Stripe (demo)',
-  razorpay: 'Razorpay (demo)',
 };
 
 export function formatReceipt(order, user, shopName = 'Forever') {
@@ -18,9 +18,10 @@ export function formatReceipt(order, user, shopName = 'Forever') {
     .join('\n            ');
 
   const customer = order.customer ?? {};
-  const address = [customer.street, customer.city, customer.state, customer.country]
-    .filter(Boolean)
-    .join(', ');
+  // The checkout collects one free-form address; older orders had split fields.
+  const address =
+    customer.address ??
+    [customer.street, customer.city, customer.state, customer.country].filter(Boolean).join(', ');
 
   return [
     `\u2705 <b>Order ${escapeHtml(order.id)} Confirmed</b>`,
@@ -30,6 +31,7 @@ export function formatReceipt(order, user, shopName = 'Forever') {
     `<b>Status:</b> ${escapeHtml(order.status ?? 'Processing')}`,
     '',
     `Payment: ${escapeHtml(PAYMENT_LABELS[order.paymentMethod] ?? order.paymentMethod)}`,
+    customer.name ? `Name: ${escapeHtml(customer.name)}` : '',
     address ? `Deliver to: ${escapeHtml(address)}` : '',
     customer.phone ? `Phone: ${escapeHtml(customer.phone)}` : '',
     '',

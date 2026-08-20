@@ -127,7 +127,40 @@ Any static host works for the front end (Netlify, Cloudflare Pages, GitHub Pages
 webhook style of function or an always-on Node host (Railway, Render, a VPS) running
 `bot/`.
 
-## 4. How the Telegram integration works
+## 4. The payment step (KHQR / ABA)
+
+Checkout offers **KHQR**, **ABA Pay** and **Cash on delivery**. The first two open a
+payment sheet with a KHQR-style card: merchant, amount, and a QR code.
+
+Nothing here touches a bank. Confirming a real KHQR transfer requires a Bakong
+merchant account whose callback tells you the money arrived — so this project
+simulates the settlement, and every screen says "demo payment, no money moves".
+
+What *is* real is the scan. Two modes, chosen with `VITE_QR_MODE`:
+
+| Mode | QR contains | Scanning it does |
+| --- | --- | --- |
+| `link` (default) | `https://…/api/pay?i=<payId>` | Opens that endpoint, which records the payment. The sheet is polling `/api/pay-status` every 2s, sees it, and places the order. A camera app scan genuinely completes the checkout. |
+| `khqr` | a valid KHQR payload (`src/lib/khqr.js`) | A Cambodian banking app reads *Forever · 210.00 USD* off it, because the EMVCo tags and CRC-16 are correct. Nothing can confirm the transfer, so only the tap fallback settles it. |
+
+`payId` is 16 random bytes generated in the browser, so only whoever holds that QR
+can settle that payment. The flag lives in a Vercel Blob store (`api/_lib/paymentStore.js`)
+because the scan and the poll are separate serverless invocations that share no memory.
+
+Tapping the QR card settles the payment immediately — a safety net if the camera or
+the network misbehaves mid-presentation. Set `VITE_DEMO_PAY_TAP=0` to require a real
+scan.
+
+### Making it a real payment
+
+Register a Bakong merchant account, put its id in `VITE_KHQR_ACCOUNT`, switch to
+`VITE_QR_MODE=khqr`, and replace the polling in `PaymentSheet` with a call to
+Bakong's `check_transaction` (or a webhook into `/api/pay`). The QR the app already
+generates is the one the bank expects; only the confirmation half is missing.
+
+---
+
+## 5. How the Telegram integration works
 
 The UI is the ordinary responsive website — same navbar, footer, collection grid and
 checkout as the web build. Telegram support sits underneath it, so one codebase serves
@@ -144,6 +177,8 @@ replaced the old email/password login: a Mini App already knows who the user is.
 | Cart + order storage | `src/telegram/cloudStorage.js` | CloudStorage (syncs across the user's devices), else `localStorage` |
 | Identity | `src/pages/Profile.jsx` | `initDataUnsafe.user`, Lucide icons, no login form |
 | Order submission | `src/lib/api.js` | Backend → `sendData` → local demo mode, in that order |
+| Payment scan | `api/pay.js`, `api/pay-status.js` | Scan settles the payment; the sheet polls for it |
+| KHQR payload | `src/lib/khqr.js` | EMVCo TLV blocks + CRC-16/CCITT |
 | Signature check | `api/_lib/initData.js` | HMAC-SHA256 of `initData` with the bot token |
 | Receipt text | `api/_lib/receipt.js` | The "Order #1024 Confirmed" message |
 | Bot (deployed) | `api/telegram.js` | Webhook: `/start`, `/keyboard`, `web_app_data` |
@@ -168,7 +203,7 @@ whole security model of a Mini App, and it is worth a slide of its own.
 
 ---
 
-## 5. Live demo script
+## 6. Live demo script
 
 1. **Open the bot** — send `/start`. The bot replies with a welcome message and an
    **🛍️ Open Shop** button (the Shop button next to the chat input works too).
@@ -176,10 +211,12 @@ whole security model of a Mini App, and it is worth a slide of its own.
 3. **Open a product** — pick a size on the product page.
 4. **Add to cart** — the cart badge in the navbar updates, with a haptic tap on a phone.
 5. **Checkout** — *Proceed to checkout*; the delivery form is pre-filled with the name
-   from the Telegram account.
-6. **Place order** — a native Telegram popup confirms:
+   from the Telegram account. Pick **KHQR**.
+6. **Pay** — the QR appears. Scan it with a phone camera: the phone shows "payment
+   received", and the shop screen flips to paid on its own a second later.
+7. **Order placed** — a native Telegram popup confirms:
    `Order #1024 Confirmed · Total: $110 · Status: Processing`.
-7. **Telegram confirmation** — the bot posts the receipt into the chat:
+8. **Telegram confirmation** — the bot posts the receipt into the chat:
 
    ```
    ✅ Order #1024 Confirmed
@@ -192,13 +229,13 @@ whole security model of a Mini App, and it is worth a slide of its own.
    Deliver to: 12 Norodom Blvd, Phnom Penh
    ```
 
-8. **Close with the point**: the same React build is a normal website *and* a Telegram
+9. **Close with the point**: the same React build is a normal website *and* a Telegram
    Mini App; Telegram supplies identity, storage and the chat channel, and the server
    trusts none of it until the `initData` signature checks out.
 
 ---
 
-## 6. Troubleshooting
+## 7. Troubleshooting
 
 | Symptom | Fix |
 | --- | --- |

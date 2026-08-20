@@ -23,6 +23,34 @@ const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 export const hasBackend = true;
 
+/** Base for every API call: empty string means "same origin". */
+export const apiBase = API_URL;
+
+/**
+ * The URL encoded in the checkout QR. Opening it (by scanning with a phone
+ * camera) records the payment; the checkout screen polls checkPayment() and
+ * reacts. Falls back to the page's own origin when VITE_API_URL is unset.
+ */
+export function paymentUrl(payId) {
+  const base = API_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+  return `${base}/api/pay?i=${payId}`;
+}
+
+/** Has anyone scanned the QR for this payment yet? */
+export async function checkPayment(payId) {
+  const response = await fetch(`${API_URL}/api/pay-status?i=${payId}`, { cache: 'no-store' });
+  if (!response.ok) return false;
+  const data = await response.json().catch(() => ({}));
+  return Boolean(data.paid);
+}
+
+/** Unguessable id so only whoever holds the QR can settle the payment. */
+export function newPayId() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
 export async function submitOrder(order) {
   // Only Telegram can produce the signed initData the server insists on, so a
   // visitor on the plain website goes straight to local demo mode instead of

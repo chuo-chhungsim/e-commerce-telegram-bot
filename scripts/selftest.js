@@ -23,6 +23,7 @@ globalThis.fetch = async (url, options) => {
 const { createHmac } = await import('node:crypto');
 const order = await import('../api/order.js');
 const telegram = await import('../api/telegram.js');
+const { verifyInitData } = await import('../api/_lib/initData.js');
 
 /** Sign initData the way Telegram does. */
 function signInitData(user) {
@@ -57,8 +58,8 @@ const ORDER = {
   shipping: 10,
   total: 110,
   status: 'Processing',
-  paymentMethod: 'cod',
-  customer: { firstName: 'Tola', street: '12 Norodom Blvd', city: 'Phnom Penh', phone: '012345678' },
+  paymentMethod: 'khqr',
+  customer: { name: 'Tola', address: '12 Norodom Blvd, Phnom Penh', phone: '012345678' },
   items: [{ name: 'Women Round Neck Cotton Top', size: 'M', quantity: 1, price: 100 }],
 };
 
@@ -80,6 +81,8 @@ const receipt = sent.at(-1)?.payload?.text ?? '';
 check('receipt says "Order #1024 Confirmed"', receipt.includes('Order #1024 Confirmed'));
 check('receipt carries the total', receipt.includes('$110'));
 check('receipt carries the status', receipt.includes('Processing'));
+check('receipt names the payment method', receipt.includes('KHQR (demo)'));
+check('receipt carries the delivery address', receipt.includes('12 Norodom Blvd'));
 check('receipt goes to the id from initData', sent.at(-1)?.payload?.chat_id === 42);
 
 res = mockRes();
@@ -94,6 +97,55 @@ check('missing initData rejected', res.statusCode === 401);
 res = mockRes();
 await order.default({ method: 'GET', headers: {} }, res);
 check('GET not allowed', res.statusCode === 405);
+
+console.log('\napi/_lib/initData.js (shapes real Telegram clients send)');
+
+/**
+ * Sign an arbitrary set of fields the way Telegram does, and return the raw
+ * initData string with values percent-encoded exactly as `raw` describes.
+ * `omitFromHash` covers the disagreement over whether `signature` is part of
+ * the bot-token check string.
+ */
+function signFields(fields, { omitFromHash = [], rawValues = {} } = {}) {
+  const checkString = Object.entries(fields)
+    .filter(([key]) => !omitFromHash.includes(key))
+    .map(([key, value]) => `${key}=${value}`)
+    .sort()
+    .join('\n');
+  const secret = createHmac('sha256', 'WebAppData').update(TOKEN).digest();
+  const hash = createHmac('sha256', secret).update(checkString).digest('hex');
+  const encoded = Object.entries(fields)
+    .map(([key, value]) => `${key}=${rawValues[key] ?? encodeURIComponent(value)}`)
+    .join('&');
+  return `${encoded}&hash=${hash}`;
+}
+
+const USER = { id: 42, first_name: 'Tola' };
+const base = () => ({ auth_date: String(Math.floor(Date.now() / 1000)), user: JSON.stringify(USER) });
+
+// A '+' that arrives unencoded: URLSearchParams would read it as a space and
+// every signature would look forged.
+const plusFields = { ...base(), query_id: 'AAH+dF6IQ+AAAAA' };
+check(
+  "query_id containing a literal '+' still verifies",
+  verifyInitData(signFields(plusFields, { rawValues: { query_id: 'AAH+dF6IQ+AAAAA' } }), TOKEN).ok,
+);
+
+// Bot API 8 clients add `signature`; implementations differ on whether it is
+// part of the check string, so both readings must pass.
+const withSignature = { ...base(), query_id: 'AAAAAA', signature: 'abcDEF-_123' };
+check(
+  'signature field present, excluded from the hash',
+  verifyInitData(signFields(withSignature, { omitFromHash: ['signature'] }), TOKEN).ok,
+);
+check(
+  'signature field present, included in the hash',
+  verifyInitData(signFields(withSignature), TOKEN).ok,
+);
+check('wrong token still rejected', !verifyInitData(signFields(withSignature), 'other-token').ok);
+
+const stale = { auth_date: String(Math.floor(Date.now() / 1000) - 90000), user: JSON.stringify(USER) };
+check('expired initData rejected', verifyInitData(signFields(stale), TOKEN).reason === 'initData expired');
 
 console.log('\napi/telegram.js');
 

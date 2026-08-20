@@ -5,7 +5,8 @@
 A fashion storefront built with React + Vite + Tailwind. The same build runs as a normal
 website **and** as a Telegram Mini App: inside Telegram it adds the real account, the
 native back button, haptics, a CloudStorage-backed cart, and a bot that confirms orders
-in the chat. The login form is gone — `/profile` shows the Telegram account instead.
+in the chat. The login form is gone — `/profile` shows the Telegram account instead, and
+checkout is a KHQR scan: scanning the QR with a phone camera completes the order.
 
 ```bash
 npm install
@@ -28,8 +29,8 @@ src/
   components/   Navbar, footer, search, product cards, cart totals
   pages/        Home, Collection, Product, Cart, PlaceOrder, Orders, Profile, About, Contact
   context/      Shop state: cart, orders, persistence
-  lib/          Order API client
-api/            Vercel functions: bot webhook + order endpoint (_lib/ is shared)
+  lib/          Order API client, KHQR payload builder
+api/            Vercel functions: bot webhook, order endpoint, scan-to-pay (_lib/ is shared)
 bot/            The same bot for local development, long polling instead of a webhook
 scripts/        webhook.js — switch the bot between Vercel and local
 ```
