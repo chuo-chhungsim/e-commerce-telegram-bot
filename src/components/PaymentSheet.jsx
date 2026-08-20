@@ -27,9 +27,15 @@ const POLL_INTERVAL = 2000;
 const EXPIRY_SECONDS = 300;
 
 const METHODS = {
-  khqr: { label: 'KHQR', hint: 'Scan with any Cambodian banking app' },
-  aba: { label: 'ABA Pay (demo)', hint: 'Scan with your phone camera' },
+  khqr: { label: 'KHQR' },
+  aba: { label: 'ABA Pay (demo)' },
 };
+
+// In 'link' mode the QR holds a URL, which a banking app will not treat as a
+// payment - the phone camera is what completes it. Say the right thing for the
+// mode actually in use.
+const SCAN_HINT =
+  QR_MODE === 'khqr' ? 'Scan with any Cambodian banking app' : 'Scan with your phone camera';
 
 const PaymentSheet = ({ open, method = 'khqr', amount, currency = 'USD', billNumber, onPaid, onClose }) => {
   const [status, setStatus] = useState('waiting');
@@ -124,7 +130,7 @@ const PaymentSheet = ({ open, method = 'khqr', amount, currency = 'USD', billNum
               )}
             </div>
             <p className="mt-1 text-center text-xs text-gray-400">
-              {style.hint}
+              {SCAN_HINT}
               {!expired && ` · expires in ${minutes}:${seconds}`}
             </p>
             <p className="mt-3 text-center text-[10px] uppercase tracking-wider text-gray-400">
