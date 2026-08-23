@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+a.active hr{
+   display: block;
+}
+
+*{
+   font-family: Outfit;
+}
+.prata-regular {
+   font-family: "Prata", serif;
+   font-weight: 400;
+   font-style: normal;
+ }
+ ::-webkit-scrollbar{
+   display: none;
+ }
+@media (max-width:640px){
+   
+   a.active{
+   background-color: #000;
+   color: #fff;
+   }
+}
+
+/* The design is light-only, so say so explicitly: without this the page inherits
+   whatever background the host paints (a dark Telegram theme, or a browser's
+   automatic dark mode) and the dark-on-white UI becomes unreadable. */
+:root {
+   color-scheme: light;
+}
+
+body {
+   background-color: #ffffff;
+   color: #000000;
+}
+
+/* --- Telegram Mini App only --------------------------------------------------
+   The site keeps its own light design inside Telegram; these few rules just make
+   it behave like an app there (no rubber-band close, no iOS zoom on focus, and
+   room for the home-indicator area on phones). */
+body {
+   overscroll-behavior-y: none;
+   padding-bottom: var(--tg-safe-bottom, 0px);
+}
+
+input, textarea, select {
+   font-size: 16px;
+}

@@ -1,0 +1,7 @@
+# Never upload local secrets or build artefacts to a deployment.
+.env
+.env.local
+bot/.env
+node_modules
+dist
+.DS_Store

@@ -1,0 +1,13 @@
+{
+  "name": "forever-shop-bot",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Demo Telegram bot + order API for the Forever Mini App. No dependencies - Node 20+ built-ins only.",
+  "scripts": {
+    "start": "node --env-file=.env index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
